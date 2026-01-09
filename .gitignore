@@ -14,9 +14,10 @@ task_plan.md
 research_notes.md
 notes.md
 
-# But keep example task files
+# But keep example and template files
 !examples/*.md
 !examples/**/*.md
+!**/templates/*.md
 
 # Keep the skill folder clean
 *.log
