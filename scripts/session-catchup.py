@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """
-Session Catchup Script for planning-with-files
+Session Catchup Script for sticky.
 
-Session-agnostic scanning: finds the most recent planning file update across
-ALL sessions, then collects all conversation from that point forward through
-all subsequent sessions until now.
+Analyzes the previous session to find unsynced context after the last
+planning file update. Designed to run at session start via /sticky:start.
 
 Usage: python3 session-catchup.py [project-path]
 """
@@ -15,15 +14,41 @@ import os
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 
-PLANNING_FILES = ['task_plan.md', 'progress.md', 'findings.md']
+PLANNING_PREFIXES = ['task_plan', 'findings', 'progress']
+
+
+def is_planning_file(file_path: str) -> bool:
+    """Check if a file path is a sticky-knowledge planning file."""
+    basename = os.path.basename(file_path)
+    return any(basename.startswith(prefix) for prefix in PLANNING_PREFIXES)
 
 
 def get_project_dir(project_path: str) -> Path:
-    """Convert project path to Claude's storage path format."""
-    sanitized = project_path.replace('/', '-')
-    if not sanitized.startswith('-'):
-        sanitized = '-' + sanitized
+    """Convert project path to Claude's storage path format.
+
+    Claude Code sanitizes paths like:
+      C:\\Users\\simon\\Desktop  ->  C--Users-simon-Desktop
+      /home/user/project       ->  -home-user-project
+
+    Rules: lowercase, replace separators with '-', collapse ':' into
+    the preceding letter (drive letter), replace '_' with '-'.
+    """
+    # Normalise to forward slashes first
+    sanitized = project_path.replace('\\', '/')
+
+    # Handle Windows drive letter: "C:/" -> "C-/"
+    if len(sanitized) >= 2 and sanitized[1] == ':':
+        sanitized = sanitized[0] + '-' + sanitized[2:]
+
+    # Replace path separators with '-'
+    sanitized = sanitized.replace('/', '-')
+
+    # Replace underscores
     sanitized = sanitized.replace('_', '-')
+
+    # Lowercase to match Claude's convention
+    sanitized = sanitized.lower()
+
     return Path.home() / '.claude' / 'projects' / sanitized
 
 
@@ -34,147 +59,105 @@ def get_sessions_sorted(project_dir: Path) -> List[Path]:
     return sorted(main_sessions, key=lambda p: p.stat().st_mtime, reverse=True)
 
 
-def get_session_first_timestamp(session_file: Path) -> Optional[str]:
-    """Get the timestamp of the first message in a session."""
-    try:
-        with open(session_file, 'r') as f:
-            for line in f:
-                try:
-                    data = json.loads(line)
-                    ts = data.get('timestamp')
-                    if ts:
-                        return ts
-                except:
-                    continue
-    except:
-        pass
-    return None
+def parse_session_messages(session_file: Path) -> List[Dict]:
+    """Parse all messages from a session file, preserving order."""
+    messages = []
+    with open(session_file, 'r', encoding='utf-8') as f:
+        for line_num, line in enumerate(f):
+            try:
+                data = json.loads(line)
+                data['_line_num'] = line_num
+                messages.append(data)
+            except json.JSONDecodeError:
+                pass
+    return messages
 
 
-def scan_for_planning_update(session_file: Path) -> Tuple[int, Optional[str]]:
+def find_last_planning_update(messages: List[Dict]) -> Tuple[int, Optional[str]]:
     """
-    Quickly scan a session file for planning file updates.
-    Returns (line_number, filename) of last update, or (-1, None) if none found.
+    Find the last time a planning file was written/edited.
+    Returns (line_number, filename) or (-1, None) if not found.
     """
     last_update_line = -1
     last_update_file = None
 
-    try:
-        with open(session_file, 'r') as f:
-            for line_num, line in enumerate(f):
-                if '"Write"' not in line and '"Edit"' not in line:
-                    continue
+    for msg in messages:
+        msg_type = msg.get('type')
 
-                try:
-                    data = json.loads(line)
-                    if data.get('type') != 'assistant':
-                        continue
-
-                    content = data.get('message', {}).get('content', [])
-                    if not isinstance(content, list):
-                        continue
-
-                    for item in content:
-                        if item.get('type') != 'tool_use':
-                            continue
+        if msg_type == 'assistant':
+            content = msg.get('message', {}).get('content', [])
+            if isinstance(content, list):
+                for item in content:
+                    if item.get('type') == 'tool_use':
                         tool_name = item.get('name', '')
-                        if tool_name not in ('Write', 'Edit'):
-                            continue
+                        tool_input = item.get('input', {})
 
-                        file_path = item.get('input', {}).get('file_path', '')
-                        for pf in PLANNING_FILES:
-                            if file_path.endswith(pf):
-                                last_update_line = line_num
-                                last_update_file = pf
-                                break
-                except json.JSONDecodeError:
-                    continue
-    except Exception:
-        pass
+                        if tool_name in ('Write', 'Edit'):
+                            file_path = tool_input.get('file_path', '')
+                            if is_planning_file(file_path):
+                                last_update_line = msg['_line_num']
+                                last_update_file = os.path.basename(file_path)
 
     return last_update_line, last_update_file
 
 
-def extract_messages_from_session(session_file: Path, after_line: int = -1) -> List[Dict]:
-    """
-    Extract conversation messages from a session file.
-    If after_line >= 0, only extract messages after that line.
-    If after_line < 0, extract all messages.
-    """
+def extract_messages_after(messages: List[Dict], after_line: int) -> List[Dict]:
+    """Extract conversation messages after a certain line number."""
     result = []
+    for msg in messages:
+        if msg['_line_num'] <= after_line:
+            continue
 
-    try:
-        with open(session_file, 'r') as f:
-            for line_num, line in enumerate(f):
-                if after_line >= 0 and line_num <= after_line:
+        msg_type = msg.get('type')
+        is_meta = msg.get('isMeta', False)
+
+        if msg_type == 'user' and not is_meta:
+            content = msg.get('message', {}).get('content', '')
+            if isinstance(content, list):
+                for item in content:
+                    if isinstance(item, dict) and item.get('type') == 'text':
+                        content = item.get('text', '')
+                        break
+                else:
+                    content = ''
+
+            if content and isinstance(content, str):
+                if content.startswith(('<local-command', '<command-', '<task-notification')):
                     continue
+                if len(content) > 20:
+                    result.append({'role': 'user', 'content': content, 'line': msg['_line_num']})
 
-                try:
-                    msg = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
+        elif msg_type == 'assistant':
+            msg_content = msg.get('message', {}).get('content', '')
+            text_content = ''
+            tool_uses = []
 
-                msg_type = msg.get('type')
-                is_meta = msg.get('isMeta', False)
-
-                if msg_type == 'user' and not is_meta:
-                    content = msg.get('message', {}).get('content', '')
-                    if isinstance(content, list):
-                        for item in content:
-                            if isinstance(item, dict) and item.get('type') == 'text':
-                                content = item.get('text', '')
-                                break
+            if isinstance(msg_content, str):
+                text_content = msg_content
+            elif isinstance(msg_content, list):
+                for item in msg_content:
+                    if item.get('type') == 'text':
+                        text_content = item.get('text', '')
+                    elif item.get('type') == 'tool_use':
+                        tool_name = item.get('name', '')
+                        tool_input = item.get('input', {})
+                        if tool_name == 'Edit':
+                            tool_uses.append(f"Edit: {tool_input.get('file_path', 'unknown')}")
+                        elif tool_name == 'Write':
+                            tool_uses.append(f"Write: {tool_input.get('file_path', 'unknown')}")
+                        elif tool_name == 'Bash':
+                            cmd = tool_input.get('command', '')[:80]
+                            tool_uses.append(f"Bash: {cmd}")
                         else:
-                            content = ''
+                            tool_uses.append(f"{tool_name}")
 
-                    if content and isinstance(content, str):
-                        # Skip system/command messages
-                        if content.startswith(('<local-command', '<command-', '<task-notification')):
-                            continue
-                        if len(content) > 20:
-                            result.append({
-                                'role': 'user',
-                                'content': content,
-                                'line': line_num,
-                                'session': session_file.stem[:8]
-                            })
-
-                elif msg_type == 'assistant':
-                    msg_content = msg.get('message', {}).get('content', '')
-                    text_content = ''
-                    tool_uses = []
-
-                    if isinstance(msg_content, str):
-                        text_content = msg_content
-                    elif isinstance(msg_content, list):
-                        for item in msg_content:
-                            if item.get('type') == 'text':
-                                text_content = item.get('text', '')
-                            elif item.get('type') == 'tool_use':
-                                tool_name = item.get('name', '')
-                                tool_input = item.get('input', {})
-                                if tool_name == 'Edit':
-                                    tool_uses.append(f"Edit: {tool_input.get('file_path', 'unknown')}")
-                                elif tool_name == 'Write':
-                                    tool_uses.append(f"Write: {tool_input.get('file_path', 'unknown')}")
-                                elif tool_name == 'Bash':
-                                    cmd = tool_input.get('command', '')[:80]
-                                    tool_uses.append(f"Bash: {cmd}")
-                                elif tool_name == 'AskUserQuestion':
-                                    tool_uses.append("AskUserQuestion")
-                                else:
-                                    tool_uses.append(f"{tool_name}")
-
-                    if text_content or tool_uses:
-                        result.append({
-                            'role': 'assistant',
-                            'content': text_content[:600] if text_content else '',
-                            'tools': tool_uses,
-                            'line': line_num,
-                            'session': session_file.stem[:8]
-                        })
-    except Exception:
-        pass
+            if text_content or tool_uses:
+                result.append({
+                    'role': 'assistant',
+                    'content': text_content[:600] if text_content else '',
+                    'tools': tool_uses,
+                    'line': msg['_line_num']
+                })
 
     return result
 
@@ -187,78 +170,43 @@ def main():
         return
 
     sessions = get_sessions_sorted(project_dir)
-    if len(sessions) < 2:
+    if len(sessions) < 1:
         return
 
-    # Skip the current session (most recently modified = index 0)
-    previous_sessions = sessions[1:]
-
-    # Find the most recent planning file update across ALL previous sessions
-    # Sessions are sorted newest first, so we scan in order
-    update_session = None
-    update_line = -1
-    update_file = None
-    update_session_idx = -1
-
-    for idx, session in enumerate(previous_sessions):
-        line, filename = scan_for_planning_update(session)
-        if line >= 0:
-            update_session = session
-            update_line = line
-            update_file = filename
-            update_session_idx = idx
+    # Find a substantial previous session
+    target_session = None
+    for session in sessions:
+        if session.stat().st_size > 5000:
+            target_session = session
             break
 
-    if not update_session:
-        # No planning file updates found in any previous session
+    if not target_session:
         return
 
-    # Collect ALL messages from the update point forward, across all sessions
-    all_messages = []
+    messages = parse_session_messages(target_session)
+    last_update_line, last_update_file = find_last_planning_update(messages)
 
-    # 1. Get messages from the session with the update (after the update line)
-    messages_from_update_session = extract_messages_from_session(update_session, after_line=update_line)
-    all_messages.extend(messages_from_update_session)
+    # Only output if there's unsynced content
+    if last_update_line < 0:
+        messages_after = extract_messages_after(messages, len(messages) - 30)
+    else:
+        messages_after = extract_messages_after(messages, last_update_line)
 
-    # 2. Get ALL messages from sessions between update_session and current
-    # These are sessions[1:update_session_idx] (newer than update_session)
-    intermediate_sessions = previous_sessions[:update_session_idx]
-
-    # Process from oldest to newest for correct chronological order
-    for session in reversed(intermediate_sessions):
-        messages = extract_messages_from_session(session, after_line=-1)  # Get all messages
-        all_messages.extend(messages)
-
-    if not all_messages:
+    if not messages_after:
         return
 
     # Output catchup report
-    print("\n[planning-with-files] SESSION CATCHUP DETECTED")
-    print(f"Last planning update: {update_file} in session {update_session.stem[:8]}...")
+    print("\n[sticky-knowledge] SESSION CATCHUP DETECTED")
+    print(f"Previous session: {target_session.stem}")
 
-    sessions_covered = update_session_idx + 1
-    if sessions_covered > 1:
-        print(f"Scanning {sessions_covered} sessions for unsynced context")
-
-    print(f"Unsynced messages: {len(all_messages)}")
+    if last_update_line >= 0:
+        print(f"Last planning update: {last_update_file} at message #{last_update_line}")
+        print(f"Unsynced messages: {len(messages_after)}")
+    else:
+        print("No planning file updates found in previous session")
 
     print("\n--- UNSYNCED CONTEXT ---")
-
-    # Show up to 100 messages
-    MAX_MESSAGES = 100
-    if len(all_messages) > MAX_MESSAGES:
-        print(f"(Showing last {MAX_MESSAGES} of {len(all_messages)} messages)\n")
-        messages_to_show = all_messages[-MAX_MESSAGES:]
-    else:
-        messages_to_show = all_messages
-
-    current_session = None
-    for msg in messages_to_show:
-        # Show session marker when it changes
-        if msg.get('session') != current_session:
-            current_session = msg.get('session')
-            print(f"\n[Session: {current_session}...]")
-
+    for msg in messages_after[-15:]:  # Last 15 messages
         if msg['role'] == 'user':
             print(f"USER: {msg['content'][:300]}")
         else:
@@ -269,7 +217,7 @@ def main():
 
     print("\n--- RECOMMENDED ---")
     print("1. Run: git diff --stat")
-    print("2. Read: task_plan.md, progress.md, findings.md")
+    print("2. Read: docs/task_plan-*.md, docs/findings-*.md")
     print("3. Update planning files based on above context")
     print("4. Continue with task")
 

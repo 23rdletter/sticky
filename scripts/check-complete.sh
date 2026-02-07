@@ -1,46 +1,45 @@
 #!/bin/bash
-# Check if all phases in task_plan.md are complete
-# Always exits 0 — uses stdout for status reporting
-# Used by Stop hook to report task completion status
+# Check if all phases in sticky-knowledge task_plan files are complete.
+# Glob-aware: finds docs/task_plan-*.md files.
+# Exit 0 if complete (or no plan exists), exit 1 if incomplete.
+# Requires UTF-8 locale for emoji matching.
 
-PLAN_FILE="${1:-task_plan.md}"
+# Find task_plan files — check docs/ with glob, fall back to root
+PLAN_FILES=$(ls docs/task_plan-*.md 2>/dev/null || ls task_plan*.md 2>/dev/null || true)
 
-if [ ! -f "$PLAN_FILE" ]; then
-    echo "[planning-with-files] No task_plan.md found — no active planning session."
+if [ -z "$PLAN_FILES" ]; then
+    # No planning session active — exit cleanly
     exit 0
 fi
 
-# Count total phases
-TOTAL=$(grep -c "### Phase" "$PLAN_FILE" || true)
+echo "=== Sticky-Knowledge Completion Check ==="
+echo ""
 
-# Check for **Status:** format first
-COMPLETE=$(grep -cF "**Status:** complete" "$PLAN_FILE" || true)
-IN_PROGRESS=$(grep -cF "**Status:** in_progress" "$PLAN_FILE" || true)
-PENDING=$(grep -cF "**Status:** pending" "$PLAN_FILE" || true)
+TOTAL_ALL=0
+COMPLETE_ALL=0
 
-# Fallback: check for [complete] inline format if **Status:** not found
-if [ "$COMPLETE" -eq 0 ] && [ "$IN_PROGRESS" -eq 0 ] && [ "$PENDING" -eq 0 ]; then
-    COMPLETE=$(grep -c "\[complete\]" "$PLAN_FILE" || true)
-    IN_PROGRESS=$(grep -c "\[in_progress\]" "$PLAN_FILE" || true)
-    PENDING=$(grep -c "\[pending\]" "$PLAN_FILE" || true)
-fi
+for PLAN_FILE in $PLAN_FILES; do
+    # Match phase rows: lines starting with "| <digit>" (anchored to avoid false positives)
+    TOTAL=$(grep -cE "^\| *[0-9]+ *\|" "$PLAN_FILE" 2>/dev/null || true)
+    COMPLETE=$(grep -c "✅" "$PLAN_FILE" 2>/dev/null || true)
 
-# Default to 0 if empty
-: "${TOTAL:=0}"
-: "${COMPLETE:=0}"
-: "${IN_PROGRESS:=0}"
-: "${PENDING:=0}"
+    : "${TOTAL:=0}"
+    : "${COMPLETE:=0}"
 
-# Report status (always exit 0 — incomplete task is a normal state)
-if [ "$COMPLETE" -eq "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
-    echo "[planning-with-files] ALL PHASES COMPLETE ($COMPLETE/$TOTAL)"
+    TOTAL_ALL=$((TOTAL_ALL + TOTAL))
+    COMPLETE_ALL=$((COMPLETE_ALL + COMPLETE))
+
+    BASENAME=$(basename "$PLAN_FILE")
+    echo "$BASENAME: $COMPLETE/$TOTAL phases complete"
+done
+
+echo ""
+
+if [ "$COMPLETE_ALL" -eq "$TOTAL_ALL" ] && [ "$TOTAL_ALL" -gt 0 ]; then
+    echo "ALL PHASES COMPLETE — consider running /sticky:done to clean up."
 else
-    echo "[planning-with-files] Task in progress ($COMPLETE/$TOTAL phases complete)"
-    if [ "$IN_PROGRESS" -gt 0 ]; then
-        echo "[planning-with-files] $IN_PROGRESS phase(s) still in progress."
-    fi
-    if [ "$PENDING" -gt 0 ]; then
-        echo "[planning-with-files] $PENDING phase(s) pending."
-    fi
+    echo "IN PROGRESS — $COMPLETE_ALL/$TOTAL_ALL phases done."
 fi
+
+# Stop hooks must always exit 0 — non-zero is treated as an error by Claude Code
 exit 0
