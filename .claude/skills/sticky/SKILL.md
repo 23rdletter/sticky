@@ -171,5 +171,5 @@ Ensured purely through the planning files:
 | Mandate a specific planning tool | Let the user choose — track the output |
 | Delete blueprint plans on /sticky:done | Only delete ephemeral files (task_plan, findings) |
 | Delete findings before compounding | /sticky:done compounds first, then deletes |
-| Write long progress.md entries | Keep entries to ~5-10 lines — it's a changelog, not a journal |
+| Write long progress.md entries | Keep entries to ~5-20 lines — it's a changelog, not a journal |
 | Write findings that lack context | Findings must stand alone — someone reading only this file should understand what and why |
