@@ -35,12 +35,27 @@ ls docs/task_plan-*.md docs/findings-*.md 2>/dev/null
 - **Staleness check:** If any file was last modified >3 days ago:
   1. Read the task_plan and findings to understand what was worked on
   2. Ask: "Found old planning files for {slug} — delete or resume?"
-  3. If user says **delete**: append a short summary to `docs/progress.md` FIRST (what was worked on, phases completed, key findings), then delete the stale files. This covers the case where `/sticky:done` was never run.
+  3. If user says **delete**: append a short summary to `docs/progress.md` FIRST (what was worked on, phases completed, key findings). If `docs/progress.md` doesn't exist, create it from the template at `${CLAUDE_PLUGIN_ROOT}/templates/progress.md` then append. After logging, delete the stale files.
 - **Relevance check:** Match filename slug against user's current request. If clearly relevant → load and resume. If clearly unrelated → ask user. If ambiguous → ask user.
 - Read the task_plan file to identify current phase and status.
 
-**If no files exist:**
-- Create fresh namespaced files (see root SKILL.md "Creating Files" section for naming conventions and templates in `${CLAUDE_PLUGIN_ROOT}/templates/`).
+**If no files exist → initialise:**
+
+Determine a keyword slug from the user's request (e.g. "condition-enrichment", "ebay-proxy-fix"). Then run the init script:
+
+```bash
+# Unix/macOS/Git Bash
+bash "${CLAUDE_PLUGIN_ROOT}/scripts/init-session.sh" "<slug>" "<title>" "<branch>"
+```
+
+```powershell
+# Windows PowerShell
+& "${CLAUDE_PLUGIN_ROOT}/scripts/init-session.ps1" "<slug>" "<title>" "<branch>"
+```
+
+The init script is idempotent — it creates `docs/`, `task_plan`, `findings`, and `progress.md` only if they don't already exist. It uses templates from `${CLAUDE_PLUGIN_ROOT}/templates/`.
+
+After running, read the created task_plan file so you can populate it with phases in Step 3.
 
 ## Step 3: Orient
 

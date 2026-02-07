@@ -103,7 +103,25 @@ Use the templates in `${CLAUDE_PLUGIN_ROOT}/templates/` as the base structure. F
 
 ### progress.md (persistent, not ephemeral)
 
-`docs/progress.md` is a project-level changelog. NOT created by /sticky:start — only appended to by /sticky:done (or staleness cleanup). Each entry is a short dated summary (~5-10 lines) of what was worked on, key outcomes, and what's next. Keeps token cost low.
+`docs/progress.md` is a project-level changelog that accumulates across work streams. Created on first `/sticky:start` (via the init script) using the template at `${CLAUDE_PLUGIN_ROOT}/templates/progress.md`. Appended to by `/sticky:done` and by staleness cleanup in `/sticky:start`. **Never deleted** by sticky commands.
+
+Each entry is a short dated summary (~5-10 lines) of what was worked on, key outcomes, and what's next. Use this format:
+
+```markdown
+## YYYY-MM-DD — {Title}
+
+**Branch:** `{branch}`
+**Phases completed:** N/M
+
+### What was done
+- ...
+
+### Key outcomes
+- ...
+
+### What's next
+- ...
+```
 
 ## Three-Layer Plan Model
 

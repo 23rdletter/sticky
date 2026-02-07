@@ -57,16 +57,29 @@ Read the task_plan and check phase statuses:
 
 ## Step 4: Update progress.md
 
-**BEFORE deleting anything**, append a dated section to `docs/progress.md`:
+**BEFORE deleting anything**, append a dated section to `docs/progress.md`.
 
-- What was worked on (from task_plan title/phases)
-- Key outcomes (phases completed, what was built/fixed)
-- Notable decisions or discoveries (brief, from findings)
-- What's next (any incomplete phases or follow-up work identified)
+If `docs/progress.md` doesn't exist, create it from `${CLAUDE_PLUGIN_ROOT}/templates/progress.md` first.
 
-Keep the entry to ~5-10 lines. This is a changelog, not a journal.
+Use the entry format from the root SKILL.md reference:
 
-If `docs/progress.md` doesn't exist, create it with a header and the first entry.
+```markdown
+## YYYY-MM-DD — {Title from task_plan}
+
+**Branch:** `{branch}`
+**Phases completed:** N/M
+
+### What was done
+- (from task_plan phases)
+
+### Key outcomes
+- (what was built/fixed, key decisions)
+
+### What's next
+- (incomplete phases, follow-up work identified)
+```
+
+Keep entries to ~5-10 lines. This is a changelog, not a journal.
 
 ## Step 5: Clean up
 

@@ -106,12 +106,18 @@ sticky/
 ├── done/
 │   └── SKILL.md            # /sticky:done
 ├── scripts/
-│   ├── check-complete.ps1  # Windows completion check (Stop hook)
-│   ├── check-complete.sh   # Unix completion check (Stop hook)
+│   ├── init-session.sh     # Idempotent session setup (Unix)
+│   ├── init-session.ps1    # Idempotent session setup (Windows)
+│   ├── check-complete.sh   # Completion check (Stop hook, Unix)
+│   ├── check-complete.ps1  # Completion check (Stop hook, Windows)
 │   └── session-catchup.py  # Detects unsynced context from previous sessions
-└── templates/
-    ├── task_plan.md         # Phase tracker template
-    └── findings.md          # Findings/decisions template
+├── templates/
+│   ├── task_plan.md        # Phase tracker template
+│   ├── findings.md         # Findings/decisions template
+│   └── progress.md         # Progress log template
+├── CHANGELOG.md            # Version history
+├── README.md
+└── LICENSE
 ```
 
 ## Acknowledgments
