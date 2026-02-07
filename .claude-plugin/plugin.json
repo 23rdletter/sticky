@@ -7,7 +7,5 @@
 		"url": "https://github.com/23rdletter"
 	},
 	"homepage": "https://github.com/23rdletter/sticky",
-	"repository": "https://github.com/23rdletter/sticky",
-	"commands": "./.claude/commands",
-	"skills": "./.claude/skills"
+	"repository": "https://github.com/23rdletter/sticky"
 }
