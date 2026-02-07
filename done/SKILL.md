@@ -35,7 +35,30 @@ Read all `docs/findings-*.md` files. Assess whether the content is worth compoun
 - An external API/service quirk was discovered
 - Anything else that would save time/effort, improve your output, or avoid pitfalls for future you or a teammate working on something similar
 
+**If worth compounding:**
+1. First, enrich findings for compounding readiness (same as /sticky:checkpoint Step 3 — ensure every entry has enough standalone context)
+2. Always try to first invoke the `/compound` skill using the Skill tool to graduate findings to `docs/solutions/`; if the skill or tool is not available, fall back to writing solution docs directly as described below.
+3. **If `/compound` is not available** (plugin not installed or skill not found): write the solution doc directly. For each compoundable finding, create a file in `docs/solutions/` using this format:
+   ```markdown
+   ---
+   title: <short title>
+   date: YYYY-MM-DD
+   category: <bug-fix|architecture|integration|performance|tooling>
+   tags: [relevant, keywords]
+   ---
 
+   ## Problem
+   <what went wrong or what was unclear>
+
+   ## Solution
+   <what was done and why>
+
+   ## Lesson
+   <what to do differently next time>
+   ```
+   Organise files into subdirectories by category (e.g. `docs/solutions/bug-fix/`, `docs/solutions/architecture/`). Tell the user: "Wrote solution doc directly — install compound-engineering for richer categorisation."
+
+4. Wait for compounding to complete before proceeding to the next step
 
 **If not worth compounding:**
 - Tell the user: "Nothing notable to compound — straightforward work. Proceeding to cleanup."
@@ -77,7 +100,7 @@ Use the entry format from the root SKILL.md reference:
 - (incomplete phases, follow-up work identified)
 ```
 
-Keep entries to ~5-10 lines. This is a changelog, not a journal.
+Keep entries brief; line count will depend on work completed, but it should be between ~5 and 20 lines. This is a changelog, not a journal.
 
 ## Step 5: Clean up
 
