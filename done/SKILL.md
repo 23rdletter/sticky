@@ -33,11 +33,9 @@ Read all `docs/findings-*.md` files. Assess whether the content is worth compoun
 - A non-obvious decision was made (architectural choice, workaround, gotcha discovered)
 - A reusable pattern or technique was established
 - An external API/service quirk was discovered
+- Anything else that would save time/effort, improve your output, or avoid pitfalls for future you or a teammate working on something similar
 
-**If worth compounding:**
-1. First, enrich findings for compounding readiness (same as /sticky:checkpoint Step 3 — ensure every entry has enough standalone context)
-2. Invoke the `/compound` skill using the Skill tool to graduate findings to `docs/solutions/`
-3. Wait for /compound to complete before proceeding to the next step
+
 
 **If not worth compounding:**
 - Tell the user: "Nothing notable to compound — straightforward work. Proceeding to cleanup."

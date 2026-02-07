@@ -41,7 +41,7 @@ ls docs/task_plan-*.md docs/findings-*.md 2>/dev/null
 
 **If no files exist → initialise:**
 
-Determine a keyword slug from the user's request (e.g. "condition-enrichment", "ebay-proxy-fix"). Then run the init script:
+Determine a clear and identifiable keyword slug from the user's request (e.g. "condition-enrichment", "hero-ui-update"). Then run the init script:
 
 ```bash
 # Unix/macOS/Git Bash
@@ -71,7 +71,7 @@ After Orient, present the user with the appropriate path:
 
 **a) "Want to make a plan?"** — The task is non-trivial. task_plan has rough phases but no detailed blueprint. Ask: "Want me to enter plan mode, or do you have a planning skill you'd prefer to use?" After planning, link the blueprint in task_plan and confirm before executing.
 
-**b) "Plan already exists"** — A blueprint was created beforehand (check `docs/plans/`), or the user is resuming a previous session where planning was already done. Summarise: "Blueprint at docs/plans/X.md, task_plan shows Phase N in progress — pick up here?" Confirm before executing.
+**b) "Plan already exists"** — A blueprint was created beforehand (check `docs/plans/` or ~/.claude/plans/), or the user is resuming a previous session where planning was already done. Summarise: "Blueprint at {path}, task_plan shows Phase N in progress — pick up here?" Confirm before executing.
 
 **c) "This is simple — just go?"** — The task is small enough that the task_plan tracker IS the plan. No blueprint needed. Still confirm: "This is straightforward — I'll do X then Y. Good to go?"
 

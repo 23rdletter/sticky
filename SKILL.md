@@ -99,6 +99,7 @@ Use the templates in `${CLAUDE_PLUGIN_ROOT}/templates/` as the base structure. F
 - **Write decisions immediately** — if a decision was made in conversation, it goes in findings NOW (not "we'll write it later")
 - **2-Action Rule** — after every 2 search/view/browse operations, update findings with what you learned
 - **Compounding readiness** — findings must have enough context to stand alone. When writing an entry, ask: "Would someone reading only this file understand what happened and why?" If not, add the missing context.
+- **Detail for compounding** — provide enough detail that when findings are compounded into a solution doc, the doc can be written with full context and rationale with zero gaps. This is the source material for the final solution, so it must be comprehensive and clear.
 - **This file graduates** — when /compound runs, findings become the source material for docs/solutions/
 
 ### progress.md (persistent, not ephemeral)
@@ -137,11 +138,11 @@ Sticky owns the **Tracker** layer. The Blueprint comes from whatever planning to
 
 Sticky does NOT mandate which tools you use for brainstorming, planning, executing, or reviewing. It only manages the ephemeral tracking files and keeps them in Claude's attention.
 
-Use whatever combination works:
-- **Brainstorm:** /brainstorm, just talking, nothing
-- **Plan:** /workflows:plan, /superpowers:writing-plans, EnterPlanMode, manual
-- **Execute:** /superpowers:executing-plans, subagent-driven, /lfg, manual
-- **Review:** /workflows:review, code-reviewer agent, manual
+Use whatever combination the user prefers, as long as the output is captured in the planning files. The /workflows examples below are drawn from compound-engineering, but the user is not limited to these. Work with whatever plugins and workflows the user prefers:
+- **Brainstorm:** /workflows:brainstorm, just talking, nothing
+- **Plan:** /workflows:plan, EnterPlanMode, any other planning skill the user has installed, manual
+- **Execute:** /workflows:work, /lfg, manual
+- **Review:** /workflows:review, manual
 
 ## Session Boundaries
 
@@ -150,8 +151,8 @@ Suggest starting a fresh session when:
 - Context usage exceeds ~70% and significant work remains
 - A logical milestone is reached (PR created, feature complete) and next task is distinct
 
-Before /clear: run `/sticky:checkpoint` to sync planning files.
-On fresh session: re-invoke `/sticky:start` — step 1 catches up from files.
+Before /clear: the user should run `/sticky:checkpoint` to sync planning files.
+On fresh session: the user should re-invoke `/sticky:start` — step 1 catches up from files.
 
 ## Continuity across /clear
 
