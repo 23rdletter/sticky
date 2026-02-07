@@ -1,5 +1,13 @@
 {
 	"name": "sticky",
-	"description": "Persistent file-based planning across Claude Code sessions",
-	"skills": "./"
+	"description": "Persistent file-based planning across Claude Code sessions. Creates namespaced ephemeral files (task_plan, findings) in docs/ that survive /clear and session boundaries.",
+	"version": "3.0.0",
+	"author": {
+		"name": "23rdletter",
+		"url": "https://github.com/23rdletter"
+	},
+	"homepage": "https://github.com/23rdletter/sticky",
+	"repository": "https://github.com/23rdletter/sticky",
+	"commands": "./.claude/commands",
+	"skills": "./.claude/skills"
 }

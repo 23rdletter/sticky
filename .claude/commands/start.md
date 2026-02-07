@@ -1,7 +1,6 @@
 ---
 name: start
 description: Start or resume a sticky work stream — session catchup, file creation, confirm approach
-user-invocable: true
 allowed-tools:
   - Read
   - Write

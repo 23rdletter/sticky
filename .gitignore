@@ -24,8 +24,10 @@ notes.md
 # ClawdHub publish folder (managed separately)
 clawdhub-publish/
 
-# Claude session files
-.claude/
+# Claude session files (but keep commands and skills — they ARE the plugin)
+.claude/*
+!.claude/commands/
+!.claude/skills/
 
 # Keep the skill folder clean
 *.log

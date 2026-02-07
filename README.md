@@ -4,7 +4,7 @@ Persistent file-based planning for [Claude Code](https://docs.anthropic.com/en/d
 
 Sticky keeps your planning context alive across sessions using two ephemeral markdown files and hooks that automatically inject state into every tool call.
 
-> **Origins:** Sticky is a fork of [planning-with-files](https://github.com/OthmanAdi/planning-with-files) by [@OthmanAdi](https://github.com/OthmanAdi), restructured as a namespaced plugin with added checkpoint/compound workflows. The knowledge compounding pattern and plugin architecture are influenced by [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) by [Every](https://github.com/EveryInc).
+> **Origins:** Sticky is a fork of [planning-with-files](https://github.com/OthmanAdi/planning-with-files) by [@OthmanAdi](https://github.com/OthmanAdi), restructured as a marketplace plugin with added checkpoint/compound workflows. The knowledge compounding pattern and plugin architecture are influenced by [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) by [Every](https://github.com/EveryInc).
 
 ## What It Does
 
@@ -12,6 +12,45 @@ Sticky keeps your planning context alive across sessions using two ephemeral mar
 - **Hooks inject context automatically** — PreToolUse feeds the task plan into every tool call, so Claude never loses track of where you are
 - **Session catchup** detects unsynced context from previous sessions
 - **Compounds knowledge** — findings graduate to permanent docs via `/compound` when a work stream ends
+
+## Why Does This Matter?
+### Context Engineering
+[Geoff Huntley](https://x.com/GeoffreyHuntley), the creator of Ralph, frames it like this:
+> The name of the game is that you only have approximately 170k of context window to work with. So it's essential to use as little of it as possible. The more you use the context window, the worse the outcomes you'll get.
+
+Like a human, an LLM can only hold so much in its working memory before it forgets stuff. As your context window grows, quality decreases.
+
+Just as [humanlayer](https://www.humanlayer.dev/blog/advanced-context-engineering) descibes:
+> Essentially, this means designing your ENTIRE WORKFLOW around context management, and keeping utilization in the 40%-60% range (depends on complexity of the problem).
+
+RAG solutions and the like are impressive but add layers of complexity and are context-heavy. The 80/20 solution is simpler, more efficient, and elegant:
+- **Recall** from recent sessions
+- **Keep** track of tasks
+- **Log** findings
+- **Compound** learnings
+
+### Compound Engineering
+LLMs traditionally have no memory between sessions and aren't (yet) perfect at writing code. They will insert bugs and discover better ways of doing things as your code grows.
+
+The [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) plugin manages this issue effectively.
+
+Centered on a Plan → Work → Review → Compound → Repeat workflow, one of its most valuable features is compounding knowledge into /docs/solutions.
+
+When Claude encounters a similar problem in future, it can check for documented learnings and build from them.
+
+> Each unit of engineering work should make subsequent units easier—not harder.
+
+### Sticky's Role
+
+Sticky helps you manage context, create continuity between sessions, and store knowledge for later.
+
+A task plan complements your actual plan by keeping track of exactly where you are in the execution phase. It stops drift by reminding Claude of what it should be doing.
+
+A findings file keeps a log of every important decision. It stores what issues were encountered and how they were solved. Think of it like someone keeping the minutes for your work.
+
+A progress file maintains a changelog once a set of tasks is done. It's the narrative for your project.
+
+Rather than /compact and lose detail, use /clear to start a new session and /sticky:start to immediately get Claude caught up and ready to continue.
 
 ## Commands
 
@@ -33,27 +72,27 @@ Sticky owns the **Tracker** layer. It's orchestration-agnostic — use whatever 
 
 ## Install
 
-Clone into your Claude Code skills directory:
+Clone into your Claude Code plugins directory:
 
 ```bash
-git clone https://github.com/23rdletter/sticky-context.git ~/.claude/skills/sticky
+git clone https://github.com/23rdletter/sticky-context.git ~/.claude/plugins/marketplaces/sticky-context
 ```
 
 Restart Claude Code. The commands `/sticky:start`, `/sticky:checkpoint`, and `/sticky:done` will be available.
 
 ### Optional dependency
 
-The `/sticky:done` command can auto-invoke `/compound` to graduate findings into categorized solution docs. This requires the [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) plugin by [Every](https://every.to). If `/compound` isn't available, `/sticky:done` skips the compounding step and proceeds with cleanup.
+The `/sticky:done` command can auto-invoke `/compound` to graduate findings into categorized solution docs. This requires the [compound-engineering](https://github.com/EveryInc/compound-engineering-plugin) plugin by [Every](https://every.to). If `/compound` isn't available, `/sticky:done` writes solution docs directly using a compatible YAML frontmatter format.
 
 ## How Hooks Work
 
-Sticky registers three hooks that fire automatically whenever planning files exist:
+Sticky registers three hooks via the auto-loaded skill at `.claude/skills/sticky/SKILL.md`. These fire automatically whenever planning files exist:
 
 - **PreToolUse** (`Write|Edit|Bash|Read|Glob|Grep`) — injects `task_plan-*.md` content (first 50 lines) before every tool call
 - **PostToolUse** (`Write|Edit`) — reminds Claude to update phase status after file modifications
 - **Stop** — checks if all phases are complete at end of turn, suggests `/sticky:done` if so
 
-Hooks are defined in the root `SKILL.md` and fire independently of any command invocation.
+Hooks fire independently of any command invocation.
 
 ## File Naming
 
@@ -85,37 +124,39 @@ docs/findings-YYYY-MM-DD-keyword-slug.md
 
 | Feature | planning-with-files | sticky |
 |---------|-------------------|--------|
-| Architecture | Single skill + subcommands | Plugin with namespaced skills |
+| Architecture | Single skill + subcommands | Marketplace plugin with commands + auto-loaded skill |
 | Command syntax | `/planning-with-files start` | `/sticky:start` |
 | Mid-session sync | Not built-in | `/sticky:checkpoint` |
-| Knowledge compounding | Manual | Auto-invokes `/compound` in done flow |
+| Knowledge compounding | Manual | Auto-invokes `/compound` or writes solution docs directly |
 | Findings quality gate | Write and hope | Audits for standalone readability before /clear |
 | Completion verification | Checks phases | Checks phases + asks before cleaning up incomplete work |
 
 ## Project Structure
 
 ```
-sticky/
+sticky-context/
 ├── .claude-plugin/
-│   └── plugin.json         # Plugin registration (enables colon syntax)
-├── SKILL.md                # Hooks + shared reference (not user-invocable)
-├── start/
-│   └── SKILL.md            # /sticky:start
-├── checkpoint/
-│   └── SKILL.md            # /sticky:checkpoint
-├── done/
-│   └── SKILL.md            # /sticky:done
+│   ├── marketplace.json   # Marketplace registration
+│   └── plugin.json        # Plugin metadata (points to commands + skills)
+├── .claude/
+│   ├── commands/          # User-invocable slash commands
+│   │   ├── start.md       # /sticky:start
+│   │   ├── checkpoint.md  # /sticky:checkpoint
+│   │   └── done.md        # /sticky:done
+│   └── skills/
+│       └── sticky/
+│           └── SKILL.md   # Hooks + shared reference (auto-loaded, not invocable)
 ├── scripts/
-│   ├── init-session.sh     # Idempotent session setup (Unix)
-│   ├── init-session.ps1    # Idempotent session setup (Windows)
-│   ├── check-complete.sh   # Completion check (Stop hook, Unix)
-│   ├── check-complete.ps1  # Completion check (Stop hook, Windows)
-│   └── session-catchup.py  # Detects unsynced context from previous sessions
+│   ├── init-session.sh    # Idempotent session setup (Unix)
+│   ├── init-session.ps1   # Idempotent session setup (Windows)
+│   ├── check-complete.sh  # Completion check (Stop hook, Unix)
+│   ├── check-complete.ps1 # Completion check (Stop hook, Windows)
+│   └── session-catchup.py # Detects unsynced context from previous sessions
 ├── templates/
-│   ├── task_plan.md        # Phase tracker template
-│   ├── findings.md         # Findings/decisions template
-│   └── progress.md         # Progress log template
-├── CHANGELOG.md            # Version history
+│   ├── task_plan.md       # Phase tracker template
+│   ├── findings.md        # Findings/decisions template
+│   └── progress.md        # Progress log template
+├── CHANGELOG.md           # Version history
 ├── README.md
 └── LICENSE
 ```
@@ -123,7 +164,7 @@ sticky/
 ## Acknowledgments
 
 - **[planning-with-files](https://github.com/OthmanAdi/planning-with-files)** by [@OthmanAdi](https://github.com/OthmanAdi) — the original file-based planning skill that sticky evolves from. Core concepts (task_plan/findings/progress files, PreToolUse hook injection, session catchup) originate here.
-- **[compound-engineering](https://github.com/EveryInc/compound-engineering-plugin)** by [Every](https://github.com/EveryInc) — the plugin architecture pattern (`.claude-plugin/plugin.json`, namespaced skills) and the `/compound` knowledge graduation workflow that sticky integrates with.
+- **[compound-engineering](https://github.com/EveryInc/compound-engineering-plugin)** by [Every](https://github.com/EveryInc) — the marketplace plugin architecture pattern (`.claude-plugin/marketplace.json`, namespaced commands) and the `/compound` knowledge graduation workflow that sticky integrates with.
 
 ## License
 

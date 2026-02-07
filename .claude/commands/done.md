@@ -1,7 +1,6 @@
 ---
 name: done
 description: Wrap up a sticky work stream — compound findings, verify completion, update progress, clean up
-user-invocable: true
 allowed-tools:
   - Read
   - Write

@@ -2,6 +2,26 @@
 
 All notable changes to sticky-context are documented here.
 
+## [3.0.0] — 2026-02-07
+
+### Changed
+- **BREAKING:** Restructured from `~/.claude/skills/` to `~/.claude/plugins/marketplaces/` (proper marketplace plugin)
+- Commands moved from `start/SKILL.md`, `checkpoint/SKILL.md`, `done/SKILL.md` to `.claude/commands/start.md`, `.claude/commands/checkpoint.md`, `.claude/commands/done.md`
+- Root `SKILL.md` moved to `.claude/skills/sticky/SKILL.md` (auto-loaded hooks + shared reference)
+- Install path changed from `~/.claude/skills/sticky` to `~/.claude/plugins/marketplaces/sticky-context`
+
+### Added
+- `.claude-plugin/marketplace.json` — marketplace registration (enables proper colon-namespaced commands)
+- `.claude/commands/` directory — commands are now `.md` files following the marketplace plugin spec
+- `.claude/skills/sticky/` directory — auto-loaded skill for hooks
+
+### Fixed
+- `/sticky:start`, `/sticky:checkpoint`, `/sticky:done` now appear correctly in the slash command palette (previously only showed as flat `sticky` skill)
+
+### Removed
+- `start/`, `checkpoint/`, `done/` subdirectories (replaced by `.claude/commands/`)
+- Root `SKILL.md` (moved to `.claude/skills/sticky/SKILL.md`)
+
 ## [2.1.0] — 2026-02-07
 
 ### Added
@@ -12,7 +32,7 @@ All notable changes to sticky-context are documented here.
 
 ### Changed
 - `start/SKILL.md` — uses init script for file creation; handles missing progress.md in staleness cleanup
-- `done/SKILL.md` — references progress template; structured entry format
+- `done/SKILL.md` — references progress template; structured entry format; `/compound` fallback for users without compound-engineering
 - Root `SKILL.md` — progress.md section references template and includes entry format
 
 ### Fixed

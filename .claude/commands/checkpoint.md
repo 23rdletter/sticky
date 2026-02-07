@@ -1,7 +1,6 @@
 ---
 name: checkpoint
 description: Sync planning files before /clear — update tracker, enrich findings, confirm ready
-user-invocable: true
 allowed-tools:
   - Read
   - Write

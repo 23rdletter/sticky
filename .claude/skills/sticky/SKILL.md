@@ -1,6 +1,6 @@
 ---
 name: sticky
-version: "2.0.0"
+version: "3.0.0"
 description: >
   Persistent file-based planning across Claude Code sessions. Creates namespaced
   ephemeral files (task_plan, findings) in docs/ that survive /clear and session
@@ -22,7 +22,7 @@ hooks:
     - hooks:
         - type: command
           command: |
-            SCRIPT_DIR="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/skills/sticky}/scripts"
+            SCRIPT_DIR="${CLAUDE_PLUGIN_ROOT}/scripts"
 
             # Guard: only run if planning files exist
             PLAN_FILES=$(ls docs/task_plan-*.md 2>/dev/null || ls task_plan*.md 2>/dev/null || true)

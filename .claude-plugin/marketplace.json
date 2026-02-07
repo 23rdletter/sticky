@@ -1,0 +1,27 @@
+{
+	"$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+	"name": "sticky-context",
+	"metadata": {
+		"description": "Persistent file-based planning across Claude Code sessions. Ephemeral task_plan and findings files survive /clear and session boundaries."
+	},
+	"owner": {
+		"name": "23rdletter",
+		"url": "https://github.com/23rdletter"
+	},
+	"plugins": [
+		{
+			"name": "sticky",
+			"description": "Persistent file-based planning across Claude Code sessions. Creates namespaced ephemeral files (task_plan, findings) in docs/ that survive /clear and session boundaries.",
+			"version": "3.0.0",
+			"author": {
+				"name": "23rdletter",
+				"url": "https://github.com/23rdletter"
+			},
+			"source": "./",
+			"category": "development",
+			"homepage": "https://github.com/23rdletter/sticky",
+			"license": "MIT",
+			"tags": ["planning", "sessions", "persistence", "workflow"]
+		}
+	]
+}
