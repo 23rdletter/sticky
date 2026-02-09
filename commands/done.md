@@ -36,8 +36,8 @@ Read all `docs/findings-*.md` files. Assess whether the content is worth compoun
 
 **If worth compounding:**
 1. First, enrich findings for compounding readiness (same as /sticky:checkpoint Step 3 — ensure every entry has enough standalone context)
-2. Always try to first invoke the `/compound` skill using the Skill tool to graduate findings to `docs/solutions/`; if the skill or tool is not available, fall back to writing solution docs directly as described below.
-3. **If `/compound` is not available** (plugin not installed or skill not found): write the solution doc directly. For each compoundable finding, create a file in `docs/solutions/` using this format:
+2. Always try to first invoke the `/workflows:compound` skill using the Skill tool to graduate findings to `docs/solutions/`; if the skill or tool is not available, fall back to writing solution docs directly as described below.
+3. **If `/workflows:compound` is not available** (plugin not installed or skill not found): write the solution doc directly. For each compoundable finding, create a file in `docs/solutions/` using this format:
    ```markdown
    ---
    title: <short title>
