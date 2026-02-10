@@ -101,6 +101,8 @@ Use the templates in `${CLAUDE_PLUGIN_ROOT}/templates/` as the base structure. F
 - **Compounding readiness** — findings must have enough context to stand alone. When writing an entry, ask: "Would someone reading only this file understand what happened and why?" If not, add the missing context.
 - **Detail for compounding** — provide enough detail that when findings are compounded into a solution doc, the doc can be written with full context and rationale with zero gaps. This is the source material for the final solution, so it must be comprehensive and clear.
 - **This file graduates** — when /compound runs, findings become the source material for docs/solutions/
+- **Compound as you go** — during long sessions (5+ phases), don't let findings grow unbounded. After completing a phase, compound its self-contained findings to `docs/solutions/` and prune them from this file. Keep only findings that actively inform remaining work. The 300-line checkpoint gate catches this, but proactive pruning is better than reactive.
+- **Summary + link pattern** — when a finding is compounded but still referenced by later phases, replace the full section with a 1-2 line summary linking to the solution doc: `See [title](../solutions/category/file.md)`. This preserves context pointers without the bulk.
 
 ### progress.md (persistent, not ephemeral)
 

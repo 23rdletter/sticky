@@ -46,6 +46,26 @@ Read the findings file and audit it for compounding readiness.
 
 **Fill gaps from conversation:** Review what was discussed and built this session. Any decision, discovery, or constraint mentioned in conversation but not yet in findings — add it now. This is the last chance before context is lost.
 
+## Step 3.5: Size gate — compound and prune bloated findings
+
+Count the lines in the findings file. If **over 300 lines**, the file has accumulated too much and will degrade future sessions.
+
+**Action when over 300 lines:**
+
+1. Say: "Findings file is [N] lines — over the 300-line threshold. Compounding and pruning."
+2. For each section in findings, classify it:
+   - **Compound and delete:** Self-contained discoveries, resolved bugs, completed research, tooling gotchas — anything that is a complete learning with no forward dependency on remaining work. These become `docs/solutions/` entries.
+   - **Compound but keep a summary:** Findings that are complete BUT inform later phases (e.g. architectural decisions, API contracts, constraint lists). Compound the full detail to `docs/solutions/`, replace the section in findings with a 1-2 line summary + link to the solution doc.
+   - **Keep as-is:** In-progress findings, unresolved blockers, active constraints still being worked against — anything the next session needs in full to continue.
+3. For sections marked "compound and delete" or "compound but keep summary":
+   - Create solution docs in `docs/solutions/` (group related findings into one doc where natural)
+   - Delete or replace the findings sections accordingly
+4. Report what was compounded, what was summarised, and what remains.
+
+**Action when under 300 lines:** Skip this step silently.
+
+**Key principle:** Findings are a working scratchpad. `docs/solutions/` is the archive. But the scratchpad must retain anything that actively informs remaining work — don't delete context you'll need tomorrow just because the phase is "done".
+
 ## Step 4: Report
 
 Summarise what was updated:
